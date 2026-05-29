@@ -1,0 +1,280 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=yes, viewport-fit=cover">
+    <title>JioHotstar · Cookie to Token · Mobile Login</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        body {
+            background: #0b0f17;
+            font-family: system-ui, -apple-system, 'Segoe UI', 'Courier New', monospace;
+            padding: 20px;
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .card {
+            max-width: 500px;
+            width: 100%;
+            background: rgba(0, 0, 0, 0.85);
+            backdrop-filter: blur(20px);
+            border-radius: 40px;
+            border: 1px solid #00ffcc55;
+            padding: 24px 20px 32px;
+            box-shadow: 0 20px 40px rgba(0, 255, 200, 0.15);
+        }
+
+        h1 {
+            font-size: 1.8rem;
+            text-align: center;
+            color: #0ff;
+            text-shadow: 0 0 6px #0ff;
+            letter-spacing: -0.5px;
+            word-break: keep-all;
+        }
+
+        .sub {
+            text-align: center;
+            color: #ff99cc;
+            font-size: 0.7rem;
+            margin-bottom: 24px;
+            border-bottom: 1px dashed #0ff3;
+            display: inline-block;
+            width: auto;
+            margin-left: auto;
+            margin-right: auto;
+            padding-bottom: 6px;
+        }
+
+        label {
+            color: #bbffdd;
+            font-weight: 600;
+            font-size: 0.85rem;
+            display: block;
+            margin: 18px 0 8px 0;
+        }
+
+        textarea {
+            width: 100%;
+            background: #0f121e;
+            border: 1.5px solid #2a9d8f;
+            border-radius: 28px;
+            padding: 16px;
+            color: #c3ffb8;
+            font-family: monospace;
+            font-size: 0.8rem;
+            resize: vertical;
+        }
+
+        button {
+            background: linear-gradient(135deg, #00b386, #007755);
+            border: none;
+            width: 100%;
+            padding: 16px;
+            border-radius: 60px;
+            margin-top: 20px;
+            font-size: 1.2rem;
+            font-weight: bold;
+            color: white;
+            cursor: pointer;
+            transition: 0.2s;
+            font-family: monospace;
+        }
+
+        button:active {
+            transform: scale(0.97);
+        }
+
+        .result-card {
+            margin-top: 24px;
+            background: #051a1c;
+            border-radius: 28px;
+            padding: 16px;
+        }
+
+        .token-box {
+            background: #000000aa;
+            padding: 12px;
+            border-radius: 24px;
+            font-size: 0.7rem;
+            word-break: break-all;
+            color: #adff8f;
+            font-family: monospace;
+        }
+
+        .expiry-status {
+            margin-top: 12px;
+            font-size: 0.85rem;
+            font-weight: bold;
+            text-align: center;
+        }
+
+        .expired {
+            background: #4a0000;
+            border-left: 6px solid #ff5555;
+            color: #ffaaaa;
+            padding: 12px;
+            border-radius: 24px;
+        }
+
+        .valid {
+            background: #004d2e;
+            border-left: 6px solid #2ecc71;
+            color: #bbffcc;
+            padding: 12px;
+            border-radius: 24px;
+        }
+
+        .mobile-login-btn {
+            background: #0f2f4a;
+            border: 1px solid #0ff;
+            margin-top: 16px;
+            text-align: center;
+            padding: 14px;
+            border-radius: 60px;
+            color: #0ff;
+            font-weight: bold;
+            cursor: pointer;
+        }
+
+        .mobile-login-btn:active {
+            background: #0ff2;
+        }
+
+        .footer {
+            font-size: 0.6rem;
+            text-align: center;
+            margin-top: 24px;
+            color: #aaa;
+        }
+    </style>
+</head>
+<body>
+<div class="card">
+    <h1>🍿 JioHotstar · Token Login</h1>
+    <div style="text-align: center;"><span class="sub">⚡ cookie → session token · mobile ready ⚡</span></div>
+
+    <label>📎 Paste Full Cookies (from browser)</label>
+    <textarea id="cookieInput" rows="3" placeholder='Example:
+jio_token=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...; expires=Thu, 31 Dec 2026 23:59:59 GMT;
+hotstar_session=SESS_MOBILE_ABCD1234'></textarea>
+
+    <button id="generateBtn">🔓 GENERATE TOKEN & CHECK</button>
+
+    <div id="resultArea" class="result-card" style="display: none;">
+        <div><strong>🎯 EXTRACTED TOKEN (Mobile Login)</strong></div>
+        <div id="tokenValue" class="token-box">—</div>
+        <div id="expiryMessage" class="expiry-status"></div>
+        <div id="loginButtonArea"></div>
+    </div>
+    <div class="footer">⚠️ No password/OTP needed. Token = your session.</div>
+</div>
+
+<script>
+    function extractTokenFromCookies(cookieStr) {
+        if (!cookieStr) return null;
+        const patterns = [
+            /jio_token=([^;]+)/i,
+            /hotstar_session=([^;]+)/i,
+            /session[_\s]*[=:]\s*([A-Za-z0-9_\-\.]+)/i,
+            /token[_\s]*[=:]\s*([A-Za-z0-9_\-\.=]+)/i,
+            /access_token[=:]\s*([A-Za-z0-9_\-\.=]+)/i,
+            /jwt[=:]\s*([A-Za-z0-9_\-\.=]+)/i
+        ];
+        for (let regex of patterns) {
+            let m = cookieStr.match(regex);
+            if (m && m[1]) return m[1].trim();
+        }
+        let chunks = cookieStr.split(/[ ;,\n]+/);
+        for (let ch of chunks) {
+            if ((ch.includes('.') || ch.length > 35) && !ch.includes('=') && ch.length < 400) {
+                if (/^[A-Za-z0-9_\-\.=]+$/.test(ch)) return ch;
+            }
+        }
+        return null;
+    }
+
+    function isCookieExpired(cookieStr) {
+        if (!cookieStr) return true;
+        let lower = cookieStr.toLowerCase();
+        let expiresMatch = cookieStr.match(/expires=([^;]+)/i);
+        if (expiresMatch) {
+            let expDate = new Date(Date.parse(expiresMatch[1]));
+            if (!isNaN(expDate)) return expDate < new Date();
+        }
+        let maxAgeMatch = cookieStr.match(/max-age\s*=\s*([+-]?\d+)/i);
+        if (maxAgeMatch) {
+            let maxAge = parseInt(maxAgeMatch[1]);
+            if (!isNaN(maxAge) && maxAge <= 0) return true;
+        }
+        if (lower.includes('expired') || lower.includes('1970')) return true;
+        return false;
+    }
+
+    let currentToken = null;
+
+    function generate() {
+        let rawCookies = document.getElementById('cookieInput').value;
+        let token = extractTokenFromCookies(rawCookies);
+        let expired = isCookieExpired(rawCookies);
+        let resultDiv = document.getElementById('resultArea');
+        let tokenDiv = document.getElementById('tokenValue');
+        let expiryDiv = document.getElementById('expiryMessage');
+        let loginArea = document.getElementById('loginButtonArea');
+
+        if (!token) {
+            tokenDiv.innerText = "❌ No valid token found in cookies";
+            expiryDiv.innerHTML = '<span style="color:#ff7777;">Could not extract session token</span>';
+            loginArea.innerHTML = '';
+            resultDiv.style.display = "block";
+            currentToken = null;
+            return;
+        }
+
+        currentToken = token;
+        tokenDiv.innerText = token;
+
+        if (expired) {
+            expiryDiv.innerHTML = `<div class="expired">⚠️ COOKIES EXPIRED HO GAYA HAI ⚠️<br><small>Get fresh cookies from active login</small></div>`;
+            loginArea.innerHTML = '';
+        } else {
+            expiryDiv.innerHTML = `<div class="valid">✅ Cookies valid! Token ready for mobile login.</div>`;
+            loginArea.innerHTML = `
+                <div class="mobile-login-btn" id="mobileLoginBtn">
+                    📱 LOGIN TO JioHotstar (MOBILE)
+                </div>
+                <div style="margin-top: 12px; text-align: center; font-size: 0.7rem;">
+                    <button id="copyTokenBtn" style="background:#222; padding: 8px; margin-top: 6px;">📋 Copy Token Only</button>
+                </div>
+            `;
+
+            document.getElementById('mobileLoginBtn')?.addEventListener('click', function() {
+                let loginUrl = `https://www.hotstar.com/in?session_token=${encodeURIComponent(currentToken)}&auto_login=true`;
+                window.location.href = loginUrl;
+            });
+
+            document.getElementById('copyTokenBtn')?.addEventListener('click', function() {
+                navigator.clipboard.writeText(currentToken).then(() => {
+                    alert("✅ Token copied to clipboard!\nPaste it anywhere (mobile console / webview)");
+                }).catch(() => {
+                    prompt("Manual copy:", currentToken);
+                });
+            });
+        }
+
+        resultDiv.style.display = "block";
+    }
+
+    document.getElementById('generateBtn').addEventListener('click', generate);
+</script>
+</body>
+</html>
